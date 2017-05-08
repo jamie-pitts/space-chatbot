@@ -1,0 +1,6 @@
+{
+  "name": "space-chatbot",
+  "description": "Chatbot practise with API.AI and Heroku",
+  "image": "heroku/python",
+  "repository": "https://github.com/jamie-pitts/space-chatbot"
+}
