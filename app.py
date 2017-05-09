@@ -82,17 +82,13 @@ def makeWebhookResult(speech_string):
     print("Response: " + speech_string)
 
     return {
-        # "speech": speech_string,
-        # "displayText": speech_string,
+        "speech": speech_string,
+        "displayText": speech_string,
         "source": "com.jamiepitts.space-chatbot",
         "messages": [
             {
                 "type": 0,
                 "speech": speech_string
-            },
-            {
-                "type": 3,
-                "imageUrl": "https://s3.amazonaws.com/launchlibrary/RocketImages/Falcon+9+Full+Thrust_320.jpg"
             }
         ]
     }
