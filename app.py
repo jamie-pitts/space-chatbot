@@ -57,12 +57,13 @@ def getNextLaunchString():
     fetched_json = requests.get(query_url).json()
     launch = fetched_json['launches'][0]
     rocket_name = launch['rocket']['name']
+    rocket_img_url = launch['rocket']['imageURL']
     mission_name = launch['missions'][0]['name']
     launch_date = launch['net']
     launch_window_calc = launch['westamp'] - launch['wsstamp']
     launch_window = 'an instantaneous window' if launch_window_calc == 0 else 'a window of {} minutes'.format(launch_window_calc/60)
     launch_location = launch['location']['pads'][0]['name']
-    formatted_string = 'The next SpaceX launch will be the {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}.'.format(rocket_name, mission_name, launch_date, launch_window, launch_location)
+    formatted_string = 'The next SpaceX launch will be the {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}. \n {}'.format(rocket_name, mission_name, launch_date, launch_window, launch_location, rocket_img_url)
     return formatted_string
 
 
