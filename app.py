@@ -11,6 +11,7 @@ from urllib.error import HTTPError
 import json
 import os
 import datetime
+import requests
 
 from flask import Flask
 from flask import request
@@ -20,89 +21,69 @@ from flask import jsonify
 # Flask app should start in global layout
 app = Flask(__name__)
 
+CONST_API_BASE = "https://launchlibrary.net/1.2/"
+
 
 @app.route('/status', methods=['GET'])
 def status():
     return jsonify([{"status": "ok"}, {"system_time_utc": datetime.datetime.utcnow().isoformat()}])
 
 
+@app.route('/launches/next', methods=['GET'])
+def launches_next():
+    next_launch_string = getNextLaunchString()
+    print("Returning result: " + next_launch_string)
+    return next_launch_string
+
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     req = request.get_json(silent=True, force=True)
 
-    print("Request:")
+    print("Received request:")
     print(json.dumps(req, indent=4))
 
     res = processRequest(req)
 
     res = json.dumps(res, indent=4)
-    # print(res)
     r = make_response(res)
     r.headers['Content-Type'] = 'application/json'
     return r
 
 
+def getNextLaunchString():
+    query_url = CONST_API_BASE + "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate=2017-05-09"
+    print("Requesting: " + query_url)
+    fetched_json = requests.get(query_url).json()
+    launch = fetched_json['launches'][0]
+    rocket_name = launch['rocket']['name']
+    mission_name = launch['missions'][0]['name']
+    launch_date = launch['net']
+    launch_window_calc = launch['westamp'] - launch['wsstamp']
+    launch_window = 'an instantaneous window' if launch_window_calc == 0 else 'a window of {} minutes'.format(launch_window_calc/60)
+    launch_location = launch['location']['pads'][0]['name']
+    formatted_string = 'The next SpaceX launch will be the {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}.'.format(rocket_name, mission_name, launch_date, launch_window, launch_location)
+    return formatted_string
+
+
+
 def processRequest(req):
-    if req.get("result").get("action") != "yahooWeatherForecast":
-        return {}
-    baseurl = "https://query.yahooapis.com/v1/public/yql?"
-    yql_query = makeYqlQuery(req)
-    if yql_query is None:
-        return {}
-    yql_url = baseurl + urlencode({'q': yql_query}) + "&format=json"
-    result = urlopen(yql_url).read()
-    data = json.loads(result)
-    res = makeWebhookResult(data)
-    return res
-
-
-def makeYqlQuery(req):
-    result = req.get("result")
-    parameters = result.get("parameters")
-    city = parameters.get("geo-city")
-    if city is None:
-        return None
-
-    return "select * from weather.forecast where woeid in (select woeid from geo.places(1) where text='" + city + "')"
-
-
-def makeWebhookResult(data):
-    query = data.get('query')
-    if query is None:
+    action = req.get("result").get("action")
+    if action == 'nextLaunch':
+        speech_string = getNextLaunchString()
+    else:
         return {}
 
-    result = query.get('results')
-    if result is None:
-        return {}
+    return makeWebhookResult(speech_string)
 
-    channel = result.get('channel')
-    if channel is None:
-        return {}
 
-    item = channel.get('item')
-    location = channel.get('location')
-    units = channel.get('units')
-    if (location is None) or (item is None) or (units is None):
-        return {}
-
-    condition = item.get('condition')
-    if condition is None:
-        return {}
-
-    # print(json.dumps(item, indent=4))
-
-    speech = "Today in " + location.get('city') + ": " + condition.get('text') + \
-             ", the temperature is " + condition.get('temp') + " " + units.get('temperature')
-
-    print("Response:")
-    print(speech)
+def makeWebhookResult(speech_string):
+    print("Response: " + speech_string)
 
     return {
-        "speech": speech,
-        "displayText": speech,
-        # "data": data,
-        # "contextOut": [],
-        "source": "apiai-weather-webhook-sample"
+        "speech": speech_string,
+        "displayText": speech_string,
+        "source": "com.jamiepitts.space-chatbot"
     }
 
 
