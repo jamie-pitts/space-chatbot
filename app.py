@@ -63,7 +63,7 @@ def getNextLaunchString():
     launch_window_calc = launch['westamp'] - launch['wsstamp']
     launch_window = 'an instantaneous window' if launch_window_calc == 0 else 'a window of {} minutes'.format(launch_window_calc/60)
     launch_location = launch['location']['pads'][0]['name']
-    formatted_string = 'The next SpaceX launch will be the {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}. \n {}'.format(rocket_name, mission_name, launch_date, launch_window, launch_location, rocket_img_url)
+    formatted_string = 'The next SpaceX launch will be the {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}.'.format(rocket_name, mission_name, launch_date, launch_window, launch_location)
     return formatted_string
 
 
@@ -82,21 +82,17 @@ def makeWebhookResult(speech_string):
     print("Response: " + speech_string)
 
     return {
-        "speech": speech_string,
-        "displayText": speech_string,
+        # "speech": speech_string,
+        # "displayText": speech_string,
         "source": "com.jamiepitts.space-chatbot",
         "messages": [
             {
                 "type": 0,
-                "speech": "blah"
+                "speech": speech_string
             },
             {
-                "type": 1,
-                "speech": "blah2"
-            },
-            {
-                "type": 2,
-                "speech": "blah3"
+                "type": 3,
+                "imageUrl": "https://s3.amazonaws.com/launchlibrary/RocketImages/Falcon+9+Full+Thrust_320.jpg"
             }
         ]
     }
