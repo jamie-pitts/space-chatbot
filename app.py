@@ -84,7 +84,21 @@ def makeWebhookResult(speech_string):
     return {
         "speech": speech_string,
         "displayText": speech_string,
-        "source": "com.jamiepitts.space-chatbot"
+        "source": "com.jamiepitts.space-chatbot",
+        "messages": [
+            {
+                "type": 0,
+                "speech": "blah"
+            },
+            {
+                "type": 1,
+                "speech": "blah2"
+            },
+            {
+                "type": 2,
+                "speech": "blah3"
+            }
+        ]
     }
 
 
