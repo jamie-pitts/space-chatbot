@@ -42,16 +42,18 @@ def webhook():
     print(json.dumps(req, indent=4))
 
     res = processRequest(req)
+    print("Sending result:" + json.dumps(res, indent=4))
 
     return to_json_response(res)
 
 
 def processRequest(req):
     action = req.get("result").get("action")
-    context = req.get("result").get("contexts")[0]
+    context = req.get("result").get("contexts")[0] if req.get("result").get("contexts") else None
+
     if action == 'nextLaunch':
         return get_next_launch()
-    elif action == 'missionInfo':
+    elif (action == 'missionInfo') & (context is not None):
         return get_mission_info(context)
     else:
         return {}
