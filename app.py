@@ -31,7 +31,7 @@ def status():
 
 @app.route('/launches/next', methods=['GET'])
 def launches_next():
-    return to_json_response(getNextLaunchString())
+    return to_json_response(get_next_launch())
 
 
 @app.route('/webhook', methods=['POST'])
@@ -46,6 +46,17 @@ def webhook():
     return to_json_response(res)
 
 
+def processRequest(req):
+    action = req.get("result").get("action")
+    context = req.get("result").get("contexts")[0]
+    if action == 'nextLaunch':
+        return get_next_launch()
+    elif action == 'missionInfo':
+        return get_mission_info(context)
+    else:
+        return {}
+
+
 def to_json_response(data):
     res = json.dumps(data, indent=4)
     r = make_response(res)
@@ -53,30 +64,35 @@ def to_json_response(data):
     return r
 
 
-def getNextLaunchString():
+def get_next_launch():
     query_url = CONST_API_BASE + "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate=2017-05-09"
     print("Requesting: " + query_url)
     fetched_json = requests.get(query_url).json()
     launch = fetched_json['launches'][0]
+    launch_id = launch['id']
+    agency_id = launch['rocket']['agencies'][0]['id']
     rocket_name = launch['rocket']['name']
+    rocket_id = launch['rocket']['id']
     rocket_img_url = launch['rocket']['imageURL']
     mission_name = launch['missions'][0]['name']
-    launch_id = launch['id']
+    mission_id = launch['missions'][0]['id']
     launch_date = launch['net']
     launch_window_calc = launch['westamp'] - launch['wsstamp']
     launch_window = 'an instantaneous window' if launch_window_calc == 0 else 'a window of {} minutes'.format(launch_window_calc/60)
     launch_location = launch['location']['pads'][0]['name']
-    formatted_string = 'The next SpaceX launch will be the {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}.'.format(rocket_name, mission_name, launch_date, launch_window, launch_location)
-    return makeWebhookResult(formatted_string, [{"name": "launch", "lifespan": 5, "parameters": {"id": launch_id}}])
+    location_id = launch['location']['pads'][0]['id']
+    formatted_string = 'The next SpaceX launch will be the {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}.'\
+        .format(rocket_name, mission_name, launch_date, launch_window, launch_location)
+    return makeWebhookResult(formatted_string, create_context("launch", 5, {"launch-id": launch_id, "agency-id": agency_id, "rocket-id": rocket_id,
+                                                                            "mission-id": mission_id, "location-id": location_id}))
 
 
+def get_mission_info(context):
+    return makeWebhookResult("missiony blah", context)
 
-def processRequest(req):
-    action = req.get("result").get("action")
-    if action == 'nextLaunch':
-        return getNextLaunchString()
-    else:
-        return {}
+
+def create_context(name, lifespan, parameters):
+    return [{"name": name, "lifespan": lifespan, "parameters": parameters}]
 
 
 def makeWebhookResult(speech_string, output_context):
