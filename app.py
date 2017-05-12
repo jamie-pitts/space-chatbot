@@ -90,7 +90,7 @@ def get_next_launch():
 
 
 def get_mission_info(context):
-    return makeWebhookResult("missiony blah", context)
+    return makeWebhookResult("missiony blah", [])
 
 
 def create_context(name, lifespan, parameters):
