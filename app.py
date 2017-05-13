@@ -41,22 +41,31 @@ def webhook():
     print("Received request:")
     print(json.dumps(req, indent=4))
 
-    res = processRequest(req)
+    res = process_request(req)
     print("Sending result:" + json.dumps(res, indent=4))
 
     return to_json_response(res)
 
 
-def processRequest(req):
+def process_request(req):
     action = req.get("result").get("action")
-    context = req.get("result").get("contexts")[0] if req.get("result").get("contexts") else None
+    contexts = req.get("result").get("contexts") if req.get("result").get("contexts") else None
 
     if action == 'nextLaunch':
         return get_next_launch()
-    elif (action == 'missionInfo') & (context is not None):
-        return get_mission_info(context)
+    elif (action == 'missionInfo') & (contexts is not None):
+        return get_mission_info(get_context(contexts, "launch"))
     else:
         return {}
+
+
+def get_context(contexts, name):
+    if contexts is None or len(contexts) == 0:
+        return None
+    for c in contexts:
+        if c['name'] == name:
+            return c
+    return None
 
 
 def to_json_response(data):
@@ -90,19 +99,33 @@ def get_next_launch():
 
 
 def get_mission_info(context):
-    return makeWebhookResult("missiony blah", [])
+    if context is None:
+        return []
+    query_url = CONST_API_BASE + "mission/{}".format(context['parameters']['mission-id'])
+    print("Requesting: " + query_url)
+    fetched_json = requests.get(query_url).json()
+    mission = fetched_json['missions'][0]
+    description = mission['description']
+    info_url = mission['infoURL']
+    wiki_url = mission['wikiURL']
+    formatted_string = '{} \n'.format(description)
+    if wiki_url is not None and wiki_url != "":
+        formatted_string += '\n Wiki: {}'.format(wiki_url)
+    if info_url is not None and info_url != "":
+        formatted_string += '\nMore information: {}'.format(info_url)
+    return makeWebhookResult(description, [], formatted_string)
 
 
 def create_context(name, lifespan, parameters):
     return [{"name": name, "lifespan": lifespan, "parameters": parameters}]
 
 
-def makeWebhookResult(speech_string, output_context):
-    print("Response: " + speech_string)
-
+def makeWebhookResult(speech_string, output_context, display_string=None):
+    if display_string is None:
+        display_string = speech_string
     return {
         "speech": speech_string,
-        "displayText": speech_string,
+        "displayText": display_string,
         "contextOut": output_context,
         "data": [],
         "source": "com.jamiepitts.space-chatbot",
