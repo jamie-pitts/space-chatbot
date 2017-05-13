@@ -101,7 +101,7 @@ def get_next_launch():
 def get_mission_info(context):
     if context is None:
         return []
-    query_url = CONST_API_BASE + "mission/{}".format(context['parameters']['mission-id'])
+    query_url = CONST_API_BASE + "mission/{}".format(int(float(context['parameters']['mission-id'])))
     print("Requesting: " + query_url)
     fetched_json = requests.get(query_url).json()
     mission = fetched_json['missions'][0]
