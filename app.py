@@ -44,7 +44,7 @@ def webhook():
     print(json.dumps(req, indent=4))
 
     res = process_request(req)
-    print("Sending result:" + json.dumps(res, indent=4))
+    # print("Sending result:" + json.dumps(res, indent=4))
 
     return to_json_response(res)
 
@@ -61,8 +61,10 @@ def process_request(req):
             return get_mission_info(get_context(contexts, "launch"))
         elif action == 'rocketInfo':
             return get_rocket_info(get_context(contexts, "launch"))
-        elif action == 'rocketInfo':
-            return []
+        elif action == 'padInfo':
+            return get_launch_pad_info(get_context(contexts, "launch"))
+        elif action == 'agencyInfo':
+            return get_agency_info(get_context(contexts, "launch"))
 
     return {}
 
@@ -99,11 +101,11 @@ def get_next_launch():
     launch_window_calc = launch['westamp'] - launch['wsstamp']
     launch_window = 'an instantaneous window' if launch_window_calc == 0 else 'a window of {} minutes'.format(launch_window_calc/60)
     launch_location = launch['location']['pads'][0]['name']
-    location_id = launch['location']['pads'][0]['id']
+    pad_location_id = launch['location']['pads'][0]['id']
     formatted_string = 'The next SpaceX launch will be the {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}.'\
         .format(rocket_name, mission_name, launch_date, launch_window, launch_location)
     return makeWebhookResult(formatted_string, create_context("launch", 5, {"launch-id": launch_id, "agency-id": agency_id, "rocket-id": rocket_id,
-                                                                            "mission-id": mission_id, "location-id": location_id}))
+                                                                            "mission-id": mission_id, "pad-location-id": pad_location_id}))
 
 
 def get_mission_info(context):
@@ -153,6 +155,63 @@ def get_rocket_info(context):
 
     return makeWebhookResult(description, [], formatted_string)
 
+
+def get_launch_pad_info(context):
+    if context is None:
+        return []
+    query_url = CONST_LAUNCH_API_BASE + "pad/{}".format(int(float(context['parameters']['pad-location-id'])))
+    print("Requesting: " + query_url)
+    fetched_json = requests.get(query_url).json()
+    pad = fetched_json['pads'][0]
+    launch_pad_wiki = pad['wikiURL']
+    description = ""
+
+    if launch_pad_wiki is not None and launch_pad_wiki != "":
+        matcher = re.match("http[s]?://en.wikipedia.org/wiki/(.*)", launch_pad_wiki)
+        if len(matcher.groups()) > 0:
+            description = query_wiki_summary(matcher.group(1))
+
+    if description == "":
+        name = pad['name']
+        description = "The launch pad is located at {}.".format(name)
+
+    info_urls = pad['infoURLs']
+    formatted_string = '{} \n'.format(description)
+    if len(info_urls) > 0 and info_urls[0] != "":
+        formatted_string += '\nSee for more information:'
+        for url in info_urls:
+            formatted_string += '\n{}'.format(url)
+
+    return makeWebhookResult(description, [], formatted_string)
+
+
+def get_agency_info(context):
+    if context is None:
+        return []
+    query_url = CONST_LAUNCH_API_BASE + "agency/{}".format(int(float(context['parameters']['agency-id'])))
+    print("Requesting: " + query_url)
+    fetched_json = requests.get(query_url).json()
+    agency = fetched_json['agencies'][0]
+    agency_wiki = agency['wikiURL']
+    description = ""
+
+    if agency_wiki is not None and agency_wiki != "":
+        matcher = re.match("http[s]?://en.wikipedia.org/wiki/(.*)", agency_wiki)
+        if len(matcher.groups()) > 0:
+            description = query_wiki_summary(matcher.group(1))
+
+    if description == "":
+        name = agency['name']
+        description = "The agency name is {}.".format(name)
+
+    info_urls = agency['infoURLs']
+    formatted_string = '{} \n'.format(description)
+    if len(info_urls) > 0 and info_urls[0] != "":
+        formatted_string += '\nSee for more information:'
+        for url in info_urls:
+            formatted_string += '\n{}'.format(url)
+
+    return makeWebhookResult(description, [], formatted_string)
 
 def create_context(name, lifespan, parameters):
     return [{"name": name, "lifespan": lifespan, "parameters": parameters}]
