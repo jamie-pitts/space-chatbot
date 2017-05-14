@@ -23,7 +23,7 @@ from flask import jsonify
 app = Flask(__name__)
 
 CONST_LAUNCH_API_BASE = "https://launchlibrary.net/1.2/"
-CONST_WIKI_SUMMARY_API_FORMATTED = "https://en.wikipedia.org/w/api.php?format=json&action=query&redirects=1&prop=extracts&exintro=&explaintext=&indexpageids&titles={}"
+CONST_WIKI_SUMMARY_API_FORMATTED = "https://en.wikipedia.org/w/api.php?format=json&utf8=true&action=query&redirects=1&prop=extracts&exintro=&explaintext=&indexpageids&titles={}"
 
 
 @app.route('/status', methods=['GET'])
@@ -182,7 +182,7 @@ def query_wiki_summary(page_name):
     fetched_json = requests.get(query_url).json()
     page_id = fetched_json['query']['pageids'][0]
     summary = fetched_json['query']['pages'][page_id]['extract']
-    return summary
+    return summary.encode('utf-8')
 
 
 if __name__ == '__main__':
