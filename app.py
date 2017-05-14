@@ -12,6 +12,7 @@ import json
 import os
 import datetime
 import requests
+import re
 
 from flask import Flask
 from flask import request
@@ -21,7 +22,8 @@ from flask import jsonify
 # Flask app should start in global layout
 app = Flask(__name__)
 
-CONST_API_BASE = "https://launchlibrary.net/1.2/"
+CONST_LAUNCH_API_BASE = "https://launchlibrary.net/1.2/"
+CONST_WIKI_SUMMARY_API_FORMATTED = "https://en.wikipedia.org/w/api.php?format=json&action=query&redirects=1&prop=extracts&exintro=&explaintext=&indexpageids&titles={}"
 
 
 @app.route('/status', methods=['GET'])
@@ -53,10 +55,16 @@ def process_request(req):
 
     if action == 'nextLaunch':
         return get_next_launch()
-    elif (action == 'missionInfo') & (contexts is not None):
-        return get_mission_info(get_context(contexts, "launch"))
-    else:
-        return {}
+
+    if contexts is not None:
+        if action == 'missionInfo':
+            return get_mission_info(get_context(contexts, "launch"))
+        elif action == 'rocketInfo':
+            return get_rocket_info(get_context(contexts, "launch"))
+        elif action == 'rocketInfo':
+            return []
+
+    return {}
 
 
 def get_context(contexts, name):
@@ -76,7 +84,7 @@ def to_json_response(data):
 
 
 def get_next_launch():
-    query_url = CONST_API_BASE + "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate=2017-05-09"
+    query_url = CONST_LAUNCH_API_BASE + "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate=2017-05-09"
     print("Requesting: " + query_url)
     fetched_json = requests.get(query_url).json()
     launch = fetched_json['launches'][0]
@@ -101,7 +109,7 @@ def get_next_launch():
 def get_mission_info(context):
     if context is None:
         return []
-    query_url = CONST_API_BASE + "mission/{}".format(int(float(context['parameters']['mission-id'])))
+    query_url = CONST_LAUNCH_API_BASE + "mission/{}".format(int(float(context['parameters']['mission-id'])))
     print("Requesting: " + query_url)
     fetched_json = requests.get(query_url).json()
     mission = fetched_json['missions'][0]
@@ -113,6 +121,36 @@ def get_mission_info(context):
         formatted_string += '\n Wiki: {}'.format(wiki_url)
     if info_url is not None and info_url != "":
         formatted_string += '\nMore information: {}'.format(info_url)
+    return makeWebhookResult(description, [], formatted_string)
+
+
+def get_rocket_info(context):
+    if context is None:
+        return []
+    query_url = CONST_LAUNCH_API_BASE + "rocket/{}".format(int(float(context['parameters']['rocket-id'])))
+    print("Requesting: " + query_url)
+    fetched_json = requests.get(query_url).json()
+    rocket = fetched_json['rockets'][0]
+    rocket_wiki = rocket['wikiURL']
+    description = ""
+
+    if rocket_wiki is not None and rocket_wiki != "":
+        matcher = re.match("http[s]?://en.wikipedia.org/wiki/(.*)", rocket_wiki)
+        if len(matcher.groups()) > 0:
+            description = query_wiki_summary(matcher.group(1))
+
+    if description == "":
+        family = rocket['family']['name']
+        name = rocket['name']
+        description = "The {} rocket belongs to the {} rocket family.".format(name, family)
+
+    info_urls = rocket['infoURLs']
+    formatted_string = '{} \n'.format(description)
+    if len(info_urls) > 0 and info_urls[0] != "":
+        formatted_string += '\nSee for more information:'
+        for url in info_urls:
+            formatted_string += '\n{}'.format(url)
+
     return makeWebhookResult(description, [], formatted_string)
 
 
@@ -136,6 +174,15 @@ def makeWebhookResult(speech_string, output_context, display_string=None):
             }
         ]
     }
+
+
+def query_wiki_summary(page_name):
+    query_url = CONST_WIKI_SUMMARY_API_FORMATTED.format(page_name)
+    print("Requesting: " + query_url)
+    fetched_json = requests.get(query_url).json()
+    page_id = fetched_json['query']['pageids'][0]
+    summary = fetched_json['query']['pages'][page_id]['extract']
+    return summary
 
 
 if __name__ == '__main__':
