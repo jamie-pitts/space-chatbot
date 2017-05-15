@@ -111,9 +111,10 @@ def get_next_launch():
         formatted_string += "\n\nThis launch is happening soon!"
         text_string = formatted_string
         if vid_url is not None and vid_url != "":
-            text_string += "\nThe live stream can be found at: {}".format(vid_url)
+            text_string += "  \nThe live stream can be found at: {}".format(vid_url)
     return makeWebhookResult(formatted_string, create_context("launch", 5, {"launch-id": launch_id, "agency-id": agency_id, "rocket-id": rocket_id,
-                                                                            "mission-id": mission_id, "pad-location-id": pad_location_id}), text_string)
+                                                                            "mission-id": mission_id, "pad-location-id": pad_location_id}),
+                             text_string, create_quick_reply("Tell me more about the...", ["mission", "agency", "launch pad", "rocket"]))
 
 
 def get_mission_info(context):
@@ -130,7 +131,7 @@ def get_mission_info(context):
     if wiki_url is not None and wiki_url != "":
         formatted_string += '\n Wiki: {}'.format(wiki_url)
     if info_url is not None and info_url != "":
-        formatted_string += '\nMore information: {}'.format(info_url)
+        formatted_string += '  \nMore information: {}'.format(info_url)
     return makeWebhookResult(description, [], formatted_string)
 
 
@@ -159,7 +160,7 @@ def get_rocket_info(context):
     if len(info_urls) > 0 and info_urls[0] != "":
         formatted_string += '\nSee for more information:'
         for url in info_urls:
-            formatted_string += '\n{}'.format(url)
+            formatted_string += '  \n{}'.format(url)
 
     return makeWebhookResult(description, [], formatted_string)
 
@@ -188,7 +189,7 @@ def get_launch_pad_info(context):
     if len(info_urls) > 0 and info_urls[0] != "":
         formatted_string += '\nSee for more information:'
         for url in info_urls:
-            formatted_string += '\n{}'.format(url)
+            formatted_string += '  \n{}'.format(url)
 
     return makeWebhookResult(description, [], formatted_string)
 
@@ -217,7 +218,7 @@ def get_agency_info(context):
     if len(info_urls) > 0 and info_urls[0] != "":
         formatted_string += '\nSee for more information:'
         for url in info_urls:
-            formatted_string += '\n{}'.format(url)
+            formatted_string += '  \n{}'.format(url)
 
     return makeWebhookResult(description, [], formatted_string)
 
@@ -225,10 +226,10 @@ def create_context(name, lifespan, parameters):
     return [{"name": name, "lifespan": lifespan, "parameters": parameters}]
 
 
-def makeWebhookResult(speech_string, output_context, display_string=None):
+def makeWebhookResult(speech_string, output_context, display_string=None, quick_reply=None):
     if display_string is None:
         display_string = speech_string
-    return {
+    output = {
         "speech": speech_string,
         "displayText": display_string,
         "contextOut": output_context,
@@ -251,6 +252,18 @@ def makeWebhookResult(speech_string, output_context, display_string=None):
 
         ]
     }
+    if quick_reply is not None:
+        output['messages'].append(quick_reply)
+    return output
+
+
+def create_quick_reply(title, replies):
+    return {
+          "type": 2,
+          "platform": "skype",
+          "title": title,
+          "replies": replies
+        }
 
 
 def query_wiki_summary(page_name):
