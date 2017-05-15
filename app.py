@@ -233,13 +233,23 @@ def makeWebhookResult(speech_string, output_context, display_string=None):
         "displayText": display_string,
         "contextOut": output_context,
         "data": [],
-        "source": "com.jamiepitts.space-chatbot"#,
-        # "messages": [
-        #     {
-        #         "type": 0,
-        #         "speech": speech_string
-        #     }
-        # ]
+        "source": "com.jamiepitts.space-chatbot",
+        "messages": [
+            {
+                "type": 0,
+                "speech": speech_string
+            },
+            {
+                "type": 4,
+                "platform": "skype",
+                "payload": {
+                    "skype": {
+                        "text": display_string
+                    }
+                }
+             }
+
+        ]
     }
 
 
