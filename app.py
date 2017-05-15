@@ -109,7 +109,7 @@ def get_next_launch():
     text_string = formatted_string
     if is_launch_soon(launch_date_ms):
         formatted_string += "\n\nThis launch is happening soon!"
-        text_string = formatted_string
+        text_string += "\n\n**This launch is happening soon!**"
         if vid_url is not None and vid_url != "":
             text_string += "  \nThe live stream can be found at: {}".format(vid_url)
     return makeWebhookResult(formatted_string, create_context("launch", 5, {"launch-id": launch_id, "agency-id": agency_id, "rocket-id": rocket_id,
