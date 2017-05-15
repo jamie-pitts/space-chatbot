@@ -97,15 +97,23 @@ def get_next_launch():
     rocket_img_url = launch['rocket']['imageURL']
     mission_name = launch['missions'][0]['name']
     mission_id = launch['missions'][0]['id']
-    launch_date = launch['net']
+    launch_date = launch['windowstart']
+    launch_date_ms = launch['wsstamp'] * 1000
     launch_window_calc = launch['westamp'] - launch['wsstamp']
     launch_window = 'an instantaneous window' if launch_window_calc == 0 else 'a window of {} minutes'.format(launch_window_calc/60)
     launch_location = launch['location']['pads'][0]['name']
     pad_location_id = launch['location']['pads'][0]['id']
+    vid_url = launch['vidURLs'][0]
     formatted_string = 'The next SpaceX launch will be the {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}.'\
         .format(rocket_name, mission_name, launch_date, launch_window, launch_location)
+    text_string = formatted_string
+    if is_launch_soon(launch_date_ms):
+        formatted_string += "\n\nThis launch is happening soon!"
+        text_string = formatted_string
+        if vid_url is not None and vid_url != "":
+            text_string += "\nThe live stream can be found at: {}".format(vid_url)
     return makeWebhookResult(formatted_string, create_context("launch", 5, {"launch-id": launch_id, "agency-id": agency_id, "rocket-id": rocket_id,
-                                                                            "mission-id": mission_id, "pad-location-id": pad_location_id}))
+                                                                            "mission-id": mission_id, "pad-location-id": pad_location_id}), text_string)
 
 
 def get_mission_info(context):
@@ -242,6 +250,14 @@ def query_wiki_summary(page_name):
     page_id = fetched_json['query']['pageids'][0]
     summary = fetched_json['query']['pages'][page_id]['extract']
     return summary.encode('utf-8')
+
+
+def is_launch_soon(launch_time_ms):
+    ten_hours_ms = 10 * 60 * 60 * 1000
+    return True if ten_hours_ms + launch_time_ms > TimestampMillisec64() else False
+
+def TimestampMillisec64():
+    return int((datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).total_seconds() * 1000)
 
 
 if __name__ == '__main__':
