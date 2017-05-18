@@ -211,7 +211,7 @@ def get_agency_info(context):
             summary = query_wiki_summary(matcher.group(1)).split('\n')
             description = summary[0]
             if len(summary) > 1:
-                quick_reply = create_quick_reply("", ["More Information"])
+                quick_reply = create_quick_reply([], ["More Information"])
 
     if description == "":
         name = agency['name']
