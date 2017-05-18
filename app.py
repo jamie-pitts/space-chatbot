@@ -61,10 +61,16 @@ def process_request(req):
             return get_mission_info(get_context(contexts, "launch"))
         elif action == 'rocketInfo':
             return get_rocket_info(get_context(contexts, "launch"))
+        elif action == 'rocketInfoMore':
+            return get_rocket_info(get_context(contexts, "launch"), True)
         elif action == 'padInfo':
             return get_launch_pad_info(get_context(contexts, "launch"))
+        elif action == 'padInfoMore':
+            return get_launch_pad_info(get_context(contexts, "launch"), True)
         elif action == 'agencyInfo':
             return get_agency_info(get_context(contexts, "launch"))
+        elif action == 'agencyInfoMore':
+            return get_agency_info(get_context(contexts, "launch"), True)
 
     return {}
 
@@ -194,7 +200,7 @@ def get_launch_pad_info(context):
     return makeWebhookResult(description, [], formatted_string)
 
 
-def get_agency_info(context):
+def get_agency_info(context, more_info=False):
     if context is None:
         return []
     query_url = CONST_LAUNCH_API_BASE + "agency/{}".format(int(float(context['parameters']['agency-id'])))
@@ -208,10 +214,13 @@ def get_agency_info(context):
     if agency_wiki is not None and agency_wiki != "":
         matcher = re.match("http[s]?://en.wikipedia.org/wiki/(.*)", agency_wiki)
         if len(matcher.groups()) > 0:
-            summary = query_wiki_summary(matcher.group(1)).split('\n')
-            description = summary[0]
-            if len(summary) > 1:
-                quick_reply = create_quick_reply([], ["More Information"])
+            if more_info:
+                description = query_wiki_summary(matcher.group(1)).split('\n', 1)[1]
+            else:
+                summary = query_wiki_summary(matcher.group(1)).split('\n')
+                description = summary[0]
+                if len(summary) > 1:
+                    quick_reply = create_quick_reply([], ["More Information"])
 
     if description == "":
         name = agency['name']
