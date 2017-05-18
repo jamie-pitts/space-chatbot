@@ -203,11 +203,15 @@ def get_agency_info(context):
     agency = fetched_json['agencies'][0]
     agency_wiki = agency['wikiURL']
     description = ""
+    quick_reply = None
 
     if agency_wiki is not None and agency_wiki != "":
         matcher = re.match("http[s]?://en.wikipedia.org/wiki/(.*)", agency_wiki)
         if len(matcher.groups()) > 0:
-            description = query_wiki_summary(matcher.group(1))
+            summary = query_wiki_summary(matcher.group(1)).split('\n')
+            description = summary[0]
+            if len(summary) > 1:
+                quick_reply = create_quick_reply([], "More Information")
 
     if description == "":
         name = agency['name']
@@ -220,7 +224,7 @@ def get_agency_info(context):
         for url in info_urls:
             formatted_string += '  \n{}'.format(url)
 
-    return makeWebhookResult(description, [], formatted_string)
+    return makeWebhookResult(description, [], formatted_string, quick_reply)
 
 def create_context(name, lifespan, parameters):
     return [{"name": name, "lifespan": lifespan, "parameters": parameters}]
