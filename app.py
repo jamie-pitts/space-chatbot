@@ -70,6 +70,8 @@ def process_request(req):
             return get_launch_pad_info(get_context(contexts, "launch"), more_info)
         elif action == 'agencyInfo':
             return get_agency_info(get_context(contexts, "launch"), more_info)
+        elif action == 'launchAfter':
+            return get_launch_after(get_context(contexts, "launch"))
 
     return {}
 
@@ -90,8 +92,15 @@ def to_json_response(data):
     return r
 
 
-def get_next_launch():
-    query_url = CONST_LAUNCH_API_BASE + "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate={}".format(utc_date_hour_now())
+def get_launch_after(context):
+    if context is None:
+        return []
+    offset = context['parameters']['offset'] + 1
+    return get_next_launch(offset)
+
+
+def get_next_launch(offset=0):
+    query_url = CONST_LAUNCH_API_BASE + "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate={}&offset={}".format(utc_date_hour_now(), offset)
     print("Requesting: " + query_url)
     fetched_json = requests.get(query_url).json()
     launch = fetched_json['launches'][0]
@@ -108,7 +117,7 @@ def get_next_launch():
     launch_window = 'an instantaneous window' if launch_window_calc == 0 else 'a window of {} minutes'.format(launch_window_calc/60)
     launch_location = launch['location']['pads'][0]['name']
     pad_location_id = launch['location']['pads'][0]['id']
-    vid_url = launch['vidURLs'][0]
+    vid_url = launch['vidURLs'][0] if launch['vidURLs'] is not None and len(launch['vidURLs']) > 0 else None
     formatted_string = 'The next SpaceX launch will be the {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}.'\
         .format(rocket_name, mission_name, launch_date, launch_window, launch_location)
     text_string = formatted_string
@@ -118,7 +127,7 @@ def get_next_launch():
         if vid_url is not None and vid_url != "":
             text_string += "  \nThe live stream can be found at: {}".format(vid_url)
     return makeWebhookResult(formatted_string, create_context("launch", 5, {"launch-id": launch_id, "agency-id": agency_id, "rocket-id": rocket_id,
-                                                                            "mission-id": mission_id, "pad-location-id": pad_location_id}),
+                                                                            "mission-id": mission_id, "pad-location-id": pad_location_id, "offset": offset}),
                              text_string, create_quick_reply("Tell me more about the...", ["mission", "agency", "launch pad", "rocket"]))
 
 
