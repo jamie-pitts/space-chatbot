@@ -98,17 +98,17 @@ def get_launch_after(context):
     if context is None:
         return []
     offset = context['parameters']['offset'] + 1
-    return get_next_launch(offset)
+    return get_next_launch(offset, is_after=True)
 
 
 def get_launch_before(context):
     if context is None:
         return []
     offset = context['parameters']['offset'] - 1
-    return get_next_launch(offset)
+    return get_next_launch(offset, is_after=False)
 
 
-def get_next_launch(offset=0):
+def get_next_launch(offset=0, is_after=True):
     query_url = CONST_LAUNCH_API_BASE
     if offset >= 0:
         query_url += "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate={}&offset={}".format(utc_date_hour_now(), offset)
@@ -133,14 +133,24 @@ def get_next_launch(offset=0):
     vid_url = launch['vidURLs'][0] if launch['vidURLs'] is not None and len(launch['vidURLs']) > 0 else None
 
     intro_phrase = ""
+    time_phrase = ""
     if offset == 0:
         intro_phrase = "The next SpaceX launch will be the"
+        time_phrase = "The launch is planned for"
     elif offset > 0:
-        intro_phrase = "After that, the next SpaceX launch will be the"
+        time_phrase = "The launch is planned for"
+        if is_after:
+            intro_phrase = "After that, the next SpaceX launch will be the"
+        else:
+            intro_phrase = "Before that, the next SpaceX launch will be the"
     elif offset < 0:
-        intro_phrase = "Before that, the previous SpaceX launch was the"
-    formatted_string = '{} {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}.'\
-        .format(intro_phrase, rocket_name, mission_name, launch_date, launch_window, launch_location)
+        time_phrase = "The launch happened on"
+        if is_after:
+            intro_phrase = "After that, the next SpaceX launch was the"
+        else:
+            intro_phrase = "Before that, the previous SpaceX launch was the"
+    formatted_string = '{} {} rocket, performing the {} mission. {} {}, with {}, flying from {}.'\
+        .format(intro_phrase, rocket_name, mission_name, time_phrase, launch_date, launch_window, launch_location)
     text_string = formatted_string
 
     if is_launch_soon(launch_date_ms):
