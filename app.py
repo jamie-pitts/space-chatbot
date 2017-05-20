@@ -91,7 +91,7 @@ def to_json_response(data):
 
 
 def get_next_launch():
-    query_url = CONST_LAUNCH_API_BASE + "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate=2017-05-09"
+    query_url = CONST_LAUNCH_API_BASE + "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate={}".format(utc_date_hour_now())
     print("Requesting: " + query_url)
     fetched_json = requests.get(query_url).json()
     launch = fetched_json['launches'][0]
@@ -303,10 +303,13 @@ def query_wiki_summary(page_name):
 
 def is_launch_soon(launch_time_ms):
     ten_hours_ms = 10 * 60 * 60 * 1000
-    return True if ten_hours_ms + launch_time_ms > TimestampMillisec64() else False
+    return True if ten_hours_ms + TimestampMillisec64() > launch_time_ms else False
 
 def TimestampMillisec64():
     return int((datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).total_seconds() * 1000)
+
+def utc_date_hour_now():
+    return datetime.datetime.utcnow().strftime('%Y-%m-%d-%H')
 
 
 if __name__ == '__main__':
