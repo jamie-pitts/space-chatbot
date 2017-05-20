@@ -113,7 +113,7 @@ def get_next_launch(offset=0):
     if offset >= 0:
         query_url += "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate={}&offset={}".format(utc_date_hour_now(), offset)
     else:
-        query_url += "launch?limit=1&agency=spx&mode=verbose&sort=desc&enddate={}&offset={}".format(utc_date_hour_now(), offset + 1)
+        query_url += "launch?limit=1&agency=spx&mode=verbose&sort=desc&enddate={}&offset={}".format(utc_date_hour_now(), abs(offset) + 1)
     print("Requesting: " + query_url)
     fetched_json = requests.get(query_url).json()
     launch = fetched_json['launches'][0]
@@ -334,7 +334,7 @@ def query_wiki_summary(page_name):
 
 def is_launch_soon(launch_time_ms):
     ten_hours_ms = 10 * 60 * 60 * 1000
-    return True if ten_hours_ms + TimestampMillisec64() > launch_time_ms else False
+    return True if (ten_hours_ms + TimestampMillisec64() >= launch_time_ms) and (TimestampMillisec64() - ten_hours_ms <= launch_time_ms) else False
 
 def TimestampMillisec64():
     return int((datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).total_seconds() * 1000)
