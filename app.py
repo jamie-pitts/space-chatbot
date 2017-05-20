@@ -52,25 +52,24 @@ def webhook():
 def process_request(req):
     action = req.get("result").get("action")
     contexts = req.get("result").get("contexts") if req.get("result").get("contexts") else None
+    more_info = False
 
     if action == 'nextLaunch':
         return get_next_launch()
+
+    if action.endswith('More'):
+        more_info = True
+        action = action[:-4]
 
     if contexts is not None:
         if action == 'missionInfo':
             return get_mission_info(get_context(contexts, "launch"))
         elif action == 'rocketInfo':
-            return get_rocket_info(get_context(contexts, "launch"))
-        elif action == 'rocketInfoMore':
-            return get_rocket_info(get_context(contexts, "launch"), True)
+            return get_rocket_info(get_context(contexts, "launch"), more_info)
         elif action == 'padInfo':
-            return get_launch_pad_info(get_context(contexts, "launch"))
-        elif action == 'padInfoMore':
-            return get_launch_pad_info(get_context(contexts, "launch"), True)
+            return get_launch_pad_info(get_context(contexts, "launch"), more_info)
         elif action == 'agencyInfo':
-            return get_agency_info(get_context(contexts, "launch"))
-        elif action == 'agencyInfoMore':
-            return get_agency_info(get_context(contexts, "launch"), True)
+            return get_agency_info(get_context(contexts, "launch"), more_info)
 
     return {}
 
@@ -141,7 +140,7 @@ def get_mission_info(context):
     return makeWebhookResult(description, [], formatted_string)
 
 
-def get_rocket_info(context):
+def get_rocket_info(context, more_info=False):
     if context is None:
         return []
     query_url = CONST_LAUNCH_API_BASE + "rocket/{}".format(int(float(context['parameters']['rocket-id'])))
@@ -150,11 +149,18 @@ def get_rocket_info(context):
     rocket = fetched_json['rockets'][0]
     rocket_wiki = rocket['wikiURL']
     description = ""
+    quick_reply = None
 
     if rocket_wiki is not None and rocket_wiki != "":
         matcher = re.match("http[s]?://en.wikipedia.org/wiki/(.*)", rocket_wiki)
         if len(matcher.groups()) > 0:
-            description = query_wiki_summary(matcher.group(1))
+            if more_info:
+                description = query_wiki_summary(matcher.group(1)).split('\n', 1)[1]
+            else:
+                summary = query_wiki_summary(matcher.group(1)).split('\n')
+                description = summary[0]
+                if len(summary) > 1:
+                    quick_reply = create_quick_reply([], ["More Information"])
 
     if description == "":
         family = rocket['family']['name']
@@ -168,10 +174,10 @@ def get_rocket_info(context):
         for url in info_urls:
             formatted_string += '  \n{}'.format(url)
 
-    return makeWebhookResult(description, [], formatted_string)
+    return makeWebhookResult(description, [], formatted_string, quick_reply)
 
 
-def get_launch_pad_info(context):
+def get_launch_pad_info(context, more_info=False):
     if context is None:
         return []
     query_url = CONST_LAUNCH_API_BASE + "pad/{}".format(int(float(context['parameters']['pad-location-id'])))
@@ -180,11 +186,18 @@ def get_launch_pad_info(context):
     pad = fetched_json['pads'][0]
     launch_pad_wiki = pad['wikiURL']
     description = ""
+    quick_reply = None
 
     if launch_pad_wiki is not None and launch_pad_wiki != "":
         matcher = re.match("http[s]?://en.wikipedia.org/wiki/(.*)", launch_pad_wiki)
         if len(matcher.groups()) > 0:
-            description = query_wiki_summary(matcher.group(1))
+            if more_info:
+                description = query_wiki_summary(matcher.group(1)).split('\n', 1)[1]
+            else:
+                summary = query_wiki_summary(matcher.group(1)).split('\n')
+                description = summary[0]
+                if len(summary) > 1:
+                    quick_reply = create_quick_reply([], ["More Information"])
 
     if description == "":
         name = pad['name']
@@ -197,7 +210,7 @@ def get_launch_pad_info(context):
         for url in info_urls:
             formatted_string += '  \n{}'.format(url)
 
-    return makeWebhookResult(description, [], formatted_string)
+    return makeWebhookResult(description, [], formatted_string, quick_reply)
 
 
 def get_agency_info(context, more_info=False):
