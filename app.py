@@ -118,9 +118,18 @@ def get_next_launch(offset=0):
     launch_location = launch['location']['pads'][0]['name']
     pad_location_id = launch['location']['pads'][0]['id']
     vid_url = launch['vidURLs'][0] if launch['vidURLs'] is not None and len(launch['vidURLs']) > 0 else None
-    formatted_string = 'The next SpaceX launch will be the {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}.'\
-        .format(rocket_name, mission_name, launch_date, launch_window, launch_location)
+
+    intro_phrase = ""
+    if offset == 0:
+        intro_phrase = "The next SpaceX launch will be the"
+    elif offset > 0:
+        intro_phrase = "After that, the next SpaceX launch will be the"
+    elif offset < 0:
+        intro_phrase = "Before that, the previous SpaceX launch was the"
+    formatted_string = '{} {} rocket, performing the {} mission. The launch is planned for {}, with {}, flying from {}.'\
+        .format(intro_phrase, rocket_name, mission_name, launch_date, launch_window, launch_location)
     text_string = formatted_string
+
     if is_launch_soon(launch_date_ms):
         formatted_string += "\n\nThis launch is happening soon!"
         text_string += "\n\n**This launch is happening soon!**"
