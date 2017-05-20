@@ -113,7 +113,7 @@ def get_next_launch(offset=0):
     if offset >= 0:
         query_url += "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate={}&offset={}".format(utc_date_hour_now(), offset)
     else:
-        query_url += "launch?limit=1&agency=spx&mode=verbose&sort=desc&enddate={}&offset={}".format(utc_date_hour_now(), abs(offset) + 1)
+        query_url += "launch?limit=1&agency=spx&mode=verbose&sort=desc&enddate={}&offset={}".format(utc_date_hour_now(), abs(offset + 1))
     print("Requesting: " + query_url)
     fetched_json = requests.get(query_url).json()
     launch = fetched_json['launches'][0]
