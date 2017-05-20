@@ -72,6 +72,8 @@ def process_request(req):
             return get_agency_info(get_context(contexts, "launch"), more_info)
         elif action == 'launchAfter':
             return get_launch_after(get_context(contexts, "launch"))
+        elif action == 'launchBefore':
+            return get_launch_before(get_context(contexts, "launch"))
 
     return {}
 
@@ -99,8 +101,19 @@ def get_launch_after(context):
     return get_next_launch(offset)
 
 
+def get_launch_before(context):
+    if context is None:
+        return []
+    offset = context['parameters']['offset'] - 1
+    return get_next_launch(offset)
+
+
 def get_next_launch(offset=0):
-    query_url = CONST_LAUNCH_API_BASE + "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate={}&offset={}".format(utc_date_hour_now(), offset)
+    query_url = CONST_LAUNCH_API_BASE
+    if offset >= 0:
+        query_url += "launch?limit=1&agency=spx&mode=verbose&sort=asc&startdate={}&offset={}".format(utc_date_hour_now(), offset)
+    else:
+        query_url += "launch?limit=1&agency=spx&mode=verbose&sort=desc&enddate={}&offset={}".format(utc_date_hour_now(), offset + 1)
     print("Requesting: " + query_url)
     fetched_json = requests.get(query_url).json()
     launch = fetched_json['launches'][0]
