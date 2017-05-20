@@ -134,7 +134,7 @@ def get_mission_info(context):
     wiki_url = mission['wikiURL']
     formatted_string = '{} \n'.format(description)
     if wiki_url is not None and wiki_url != "":
-        formatted_string += '\n Wiki: {}'.format(wiki_url)
+        formatted_string += '\nWiki: {}'.format(wiki_url)
     if info_url is not None and info_url != "":
         formatted_string += '  \nMore information: {}'.format(info_url)
     return makeWebhookResult(description, [], formatted_string)
