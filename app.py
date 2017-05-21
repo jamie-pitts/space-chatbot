@@ -40,8 +40,8 @@ def launches_next():
 def webhook():
     req = request.get_json(silent=True, force=True)
 
-    print("Received request:")
-    print(json.dumps(req, indent=4))
+    # print("Received request:")
+    # print(json.dumps(req, indent=4))
 
     res = process_request(req)
     # print("Sending result:" + json.dumps(res, indent=4))
@@ -52,10 +52,15 @@ def webhook():
 def process_request(req):
     action = req.get("result").get("action")
     contexts = req.get("result").get("contexts") if req.get("result").get("contexts") else None
+    parameters = req.get("result").get("parameters") if req.get("result").get("parameters") and len(req.get("result").get("parameters")) != 0 else None
     more_info = False
 
     if action == 'nextLaunch':
         return get_next_launch()
+
+    if parameters is not None:
+        if action == 'upcomingLaunches':
+            return get_upcoming_launches(parameters['amount'])
 
     if action.endswith('More'):
         more_info = True
@@ -75,6 +80,8 @@ def process_request(req):
         elif action == 'launchBefore':
             return get_launch_before(get_context(contexts, "launch"))
 
+    print("Could not handle the following request:")
+    print(json.dumps(req, indent=4))
     return {}
 
 
@@ -161,6 +168,31 @@ def get_next_launch(offset=0, is_after=True):
     return makeWebhookResult(formatted_string, create_context("launch", 5, {"launch-id": launch_id, "agency-id": agency_id, "rocket-id": rocket_id,
                                                                             "mission-id": mission_id, "pad-location-id": pad_location_id, "offset": offset}),
                              text_string, create_quick_reply("Tell me more about the...", ["mission", "agency", "launch pad", "rocket"]))
+
+
+def get_upcoming_launches(amount):
+    query_url = CONST_LAUNCH_API_BASE + "launch?limit={}&agency=spx&mode=verbose&sort=asc&startdate={}".format(amount, utc_date_hour_now())
+    print("Requesting: " + query_url)
+    fetched_json = requests.get(query_url).json()
+    display_string = ""
+    speech_string = ""
+    i = 0
+    launches = fetched_json['launches']
+    if launches is None or len(launches) is 0:
+        display_string = "No upcoming SpaceX launches could be found"
+    else:
+        display_string = "The next {} planned upcoming launches for SpaceX are: ".format(len(launches))
+        for launch in launches:
+            i += 1
+            rocket_name = launch['rocket']['name']
+            mission_name = launch['missions'][0]['name']
+            launch_date = launch['windowstart']
+            launch_location = launch['location']['pads'][0]['name']
+            display_string += "\n\n\n{}. {}, flying aboard the {} rocket, from {}. Planned for {}.".format(i, mission_name, rocket_name, launch_location, launch_date)
+
+    speech_string = display_string
+    return makeWebhookResult(speech_string, None, display_string)
+
 
 
 def get_mission_info(context):
@@ -303,20 +335,8 @@ def makeWebhookResult(speech_string, output_context, display_string=None, quick_
         "data": [],
         "source": "com.jamiepitts.space-chatbot",
         "messages": [
-            {
-                "type": 0,
-                "speech": speech_string
-            },
-            {
-                "type": 4,
-                "platform": "skype",
-                "payload": {
-                    "skype": {
-                        "text": display_string
-                    }
-                }
-             }
-
+            generate_messages(display_string),
+            generate_skype(display_string)
         ]
     }
     if quick_reply is not None:
@@ -331,6 +351,39 @@ def create_quick_reply(title, replies):
           "title": title,
           "replies": replies
         }
+
+
+def generate_messages(message_string):
+    messages = message_string.split("\n\n\n")
+    output = []
+    for message in messages:
+        output.append({
+                "type": 0,
+                "speech": message
+            })
+    return output
+
+
+def generate_skype(display_string):
+    if "\n\n\n" in display_string:
+        return {
+                    "type": 4,
+                    "platform": "skype",
+                    "payload": {
+
+                    }
+                 }
+    else:
+        return {
+                    "type": 4,
+                    "platform": "skype",
+                    "payload": {
+                        "skype": {
+                            "text": display_string
+                        }
+                    }
+                 }
+
 
 
 def query_wiki_summary(page_name):
