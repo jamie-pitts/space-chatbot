@@ -334,10 +334,7 @@ def makeWebhookResult(speech_string, output_context, display_string=None, quick_
         "contextOut": output_context,
         "data": [],
         "source": "com.jamiepitts.space-chatbot",
-        "messages": [
-            generate_messages(display_string),
-            generate_skype(display_string)
-        ]
+        "messages": make_messages(display_string)
     }
     if quick_reply is not None:
         output['messages'].append(quick_reply)
@@ -353,6 +350,15 @@ def create_quick_reply(title, replies):
         }
 
 
+def make_messages(message_string):
+    messages_array = generate_messages(message_string)
+    if len(messages_array) > 1:
+        return messages_array
+    else:
+        messages_array.append(generate_skype_text(message_string))
+        return messages_array
+
+
 def generate_messages(message_string):
     messages = message_string.split("\n\n\n")
     output = []
@@ -364,19 +370,16 @@ def generate_messages(message_string):
     return output
 
 
-def generate_skype(display_string):
-    if "\n\n\n" in display_string:
-        return { }
-    else:
-        return {
-                    "type": 4,
-                    "platform": "skype",
-                    "payload": {
-                        "skype": {
-                            "text": display_string
-                        }
+def generate_skype_text(display_string):
+    return {
+                "type": 4,
+                "platform": "skype",
+                "payload": {
+                    "skype": {
+                        "text": display_string
                     }
-                 }
+                }
+             }
 
 
 
