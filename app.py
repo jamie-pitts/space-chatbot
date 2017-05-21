@@ -366,13 +366,7 @@ def generate_messages(message_string):
 
 def generate_skype(display_string):
     if "\n\n\n" in display_string:
-        return {
-                    "type": 4,
-                    "platform": "skype",
-                    "payload": {
-
-                    }
-                 }
+        return { }
     else:
         return {
                     "type": 4,
