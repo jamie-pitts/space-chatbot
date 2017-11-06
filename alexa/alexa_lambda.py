@@ -95,7 +95,7 @@ def get_next_launch(intent, session, offset=0, is_after=True):
     rocket_name = launch['rocket']['name']
     rocket_id = launch['rocket']['id']
     mission_name = "the" + launch['missions'][0]['name'] if launch['missions'] is not None and len(launch['missions']) > 0 else "a secret"
-    mission_id = launch['missions'][0]['id']
+    mission_id = launch['missions'][0]['id'] if launch['missions'] is not None and len(launch['missions']) > 0 else 0
     launch_date = launch['windowstart']
     launch_date_ms = launch['wsstamp'] * 1000
     launch_window_calc = launch['westamp'] - launch['wsstamp']

@@ -130,7 +130,7 @@ def get_next_launch(offset=0, is_after=True):
     rocket_id = launch['rocket']['id']
     rocket_img_url = launch['rocket']['imageURL']
     mission_name = "the" + launch['missions'][0]['name'] if launch['missions'] is not None and len(launch['missions']) > 0 else "a secret"
-    mission_id = launch['missions'][0]['id']
+    mission_id = launch['missions'][0]['id'] if launch['missions'] is not None and len(launch['missions']) > 0 else 0
     launch_date = launch['windowstart']
     launch_date_ms = launch['wsstamp'] * 1000
     launch_window_calc = launch['westamp'] - launch['wsstamp']
@@ -196,7 +196,7 @@ def get_upcoming_launches(amount):
 
 
 def get_mission_info(context):
-    if context is None:
+    if context is None or context['parameters']['mission-id'] is None or context['parameters']['mission-id'] == 0:
         return []
     query_url = CONST_LAUNCH_API_BASE + "mission/{}".format(int(float(context['parameters']['mission-id'])))
     print("Requesting: " + query_url)
