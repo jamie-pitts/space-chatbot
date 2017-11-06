@@ -129,7 +129,7 @@ def get_next_launch(offset=0, is_after=True):
     rocket_name = launch['rocket']['name']
     rocket_id = launch['rocket']['id']
     rocket_img_url = launch['rocket']['imageURL']
-    mission_name = launch['missions'][0]['name']
+    mission_name = "the" + launch['missions'][0]['name'] if launch['missions'] is not None and len(launch['missions']) > 0 else "a secret"
     mission_id = launch['missions'][0]['id']
     launch_date = launch['windowstart']
     launch_date_ms = launch['wsstamp'] * 1000
@@ -156,7 +156,7 @@ def get_next_launch(offset=0, is_after=True):
             intro_phrase = "After that, the next SpaceX launch was the"
         else:
             intro_phrase = "Before that, the previous SpaceX launch was the"
-    formatted_string = '{} {} rocket, performing the {} mission. {} {}, with {}, flying from {}.'\
+    formatted_string = '{} {} rocket, performing {} mission. {} {}, with {}, flying from {}.'\
         .format(intro_phrase, rocket_name, mission_name, time_phrase, launch_date, launch_window, launch_location)
     text_string = formatted_string
 
@@ -185,7 +185,7 @@ def get_upcoming_launches(amount):
         for launch in launches:
             i += 1
             rocket_name = launch['rocket']['name']
-            mission_name = launch['missions'][0]['name']
+            mission_name = launch['missions'][0]['name'] if launch['missions'] is not None and len(launch['missions']) > 0 else "A secret mission"
             launch_date = launch['windowstart']
             launch_location = launch['location']['pads'][0]['name']
             display_string += "\n\n\n{}. {}, flying aboard the {} rocket, from {}. Planned for {}.".format(i, mission_name, rocket_name, launch_location, launch_date)

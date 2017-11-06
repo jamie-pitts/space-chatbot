@@ -1,0 +1,16 @@
+NextLaunchIntent    next mission
+NextLaunchIntent	what is launching next
+NextLaunchIntent	what is SpaceX fly next
+NextLaunchIntent	what is SpaceX flying next
+NextLaunchIntent	what SpaceX is flying next
+NextLaunchIntent	what is the next launch
+NextLaunchIntent	what is the next rocket to launch
+NextLaunchIntent	what rocket is next
+NextLaunchIntent	what the next SpaceX mission
+NextLaunchIntent	what the next to launch
+NextLaunchIntent	whats the next SpaceX mission
+NextLaunchIntent	whats the next to launch
+NextLaunchIntent	when is the next launch
+NextLaunchIntent	when the next launch is
+NextLaunchIntent	when is the next SpaceX launch
+NextLaunchIntent	what is the next launch for SpaceX
